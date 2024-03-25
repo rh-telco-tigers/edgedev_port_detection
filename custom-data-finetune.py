@@ -10,6 +10,8 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import precision_score, recall_score, f1_score
 from collections import Counter
+import numpy as np
+
 
 # Initialize TensorBoard
 writer = SummaryWriter()
