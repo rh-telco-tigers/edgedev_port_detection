@@ -10,7 +10,7 @@ import sys
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
-
+from torch.utils.data import DataLoader, random_split  # Import random_split here
 
 
 # Tensor board  default `log_dir` is "runs" - we'll be more specific here
@@ -18,7 +18,7 @@ writer = SummaryWriter('runs/mnist2')
 
 
 # Hyperparameters
-num_epochs = 10
+num_epochs = 100
 batch_size = 6
 learning_rate = 0.001
 
@@ -30,13 +30,18 @@ transform = transforms.Compose([
 ])
 
 # Load COCO dataset
-train_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
+#train_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
 
-test_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
+#test_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
+
+# Load COCO dataset
+dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8',
+                        annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json',
+                        transform=transform)
 
 
 # Get the maximum number of labels for padding
-max_labels = max(len(ann) for _, ann in train_dataset)
+max_labels = max(len(ann) for _, ann in dataset)
 print(f"\nmax_labels is {max_labels}")
 
 # Load category information
@@ -52,11 +57,11 @@ for class_id, class_name in class_names.items():
     print(f"Class ID: {class_id}, Class Name: {class_name}")
 
 # Print one image
-image, annotations = train_dataset[0]  # Change the index as needed
+image, annotations = dataset[0]  # Change the index as needed
 print(f"Image shape: {image.shape}, Annotations: {annotations}")
 
 # Iterate through the dataset to find images with 6 labels
-for idx, (image, annotations) in enumerate(train_dataset):
+for idx, (image, annotations) in enumerate(dataset):
     if len(annotations) == 8:
         print(f"Image {idx + 1}:")
         print("Labels:")
@@ -94,10 +99,19 @@ def custom_collate_fn(batch):
     return torch.stack(images), torch.cat(labels_one_hot_list, dim=0)
 
 
+# Split dataset into train and test sets
+train_size = int(0.8 * len(dataset))
+test_size = len(dataset) - train_size
+train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+
 # Create data loaders with the filtered datasets
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=custom_collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=custom_collate_fn)
 
+
+# Create data loaders with the filtered datasets
+#train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=custom_collate_fn)
+#test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=custom_collate_fn)
 
 
 # Define CNN model
@@ -182,9 +196,6 @@ for epoch in range(num_epochs):
 
 print('Finished Training')
 
-
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
 # Evaluation
 model.eval()  # Set the model to evaluation mode
 test_loss = 0.0
@@ -212,16 +223,9 @@ with torch.no_grad():
             true_idx = torch.where(labels[idx] == 1)[0]
             all_true_labels.append(true_idx.cpu().numpy())
 
-# Flatten the lists of true labels and predicted labels
-true_labels_list = [class_names[i] for sublist in all_true_labels for i in sublist]
-predicted_labels_list = [class_names[i] for sublist in all_predicted_labels for i in sublist]
+# Display true labels and predicted labels
+for true_label, predicted_label in zip(all_true_labels, all_predicted_labels):
+    print(f'True Label: {true_label}, Predicted Label: {predicted_label}')
 
-# Calculate test accuracy
-test_accuracy = accuracy_score(true_labels_list, predicted_labels_list)
-
-# Calculate precision, recall, and F1 score
-precision = precision_score(true_labels_list, predicted_labels_list, average='micro')
-recall = recall_score(true_labels_list, predicted_labels_list, average='micro')
-f1 = f1_score(true_labels_list, predicted_labels_list, average='micro')
-
-print(f'Test Loss: {test_loss}, Test Accuracy: {test_accuracy}, Precision: {precision}, Recall: {recall}, F1 Score: {f1}')
+# Calculate test loss (if needed)
+print(f'Test Loss: {test_loss}')
