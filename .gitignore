@@ -3,3 +3,4 @@ models/model_v1.onnx
 runs/*
 .ipynb_checkpoints/
 app/venv
+.DS_Store

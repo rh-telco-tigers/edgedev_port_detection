@@ -3,7 +3,7 @@ from django.shortcuts import render
 from .forms import ImageUploadForm
 from django.core.files.storage import FileSystemStorage
 from .image_utils import prepare_image, create_payload
-from .utils import get_categories_from_json, select_top_predictions_per_group
+from .utils import select_top_predictions_per_group
 import requests
 from django.conf import settings
 import logging
@@ -35,9 +35,8 @@ def image_upload_view(request):
                 
                 # Assuming 'predictions_response' structure is {'outputs': [{'data': raw_predictions}]}
                 raw_predictions = predictions_response['outputs'][0]['data']
-                categories = get_categories_from_json('../../dataset/custom-data/result.json')
                 
-                top_predictions = select_top_predictions_per_group(raw_predictions, categories, n=8)
+                top_predictions = select_top_predictions_per_group(raw_predictions, n=8)
                 
                 return render(request, 'prediction_app/image_display.html', {
                     'predictions': top_predictions,
