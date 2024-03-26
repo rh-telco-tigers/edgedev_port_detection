@@ -2,3 +2,4 @@ dataset/test-images/request_payload.json
 models/model_v1.onnx
 runs/*
 .ipynb_checkpoints/
+app/venv
