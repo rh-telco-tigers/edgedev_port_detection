@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,3 +131,28 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # URL path for media files
 MEDIA_URL = '/media/'
+
+# Further down in settings.py
+MODEL_SERVER_URL = os.getenv("MODEL_SERVER_URL")
+TOKEN = os.getenv("TOKEN")
+VERIFY_SSL = False  # Set to False only in development environments
+
+# settings.py
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
