@@ -30,13 +30,13 @@ transform = transforms.Compose([
 ])
 
 # Load COCO dataset
-#train_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
+#train_dataset = CocoDetection(root='./dataset/project-12-at-2024-03-19-21-53-73daddc8', annFile='./dataset/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
 
-#test_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
+#test_dataset = CocoDetection(root='./dataset/project-12-at-2024-03-19-21-53-73daddc8', annFile='./dataset/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
 
 # Load COCO dataset
-dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8',
-                        annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json',
+dataset = CocoDetection(root='./dataset/project-12-at-2024-03-19-21-53-73daddc8',
+                        annFile='./dataset/project-12-at-2024-03-19-21-53-73daddc8/result.json',
                         transform=transform)
 
 
@@ -45,7 +45,7 @@ max_labels = max(len(ann) for _, ann in dataset)
 print(f"\nmax_labels is {max_labels}")
 
 # Load category information
-with open('/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', 'r') as f:
+with open('./dataset/project-12-at-2024-03-19-21-53-73daddc8/result.json', 'r') as f:
     coco_info = json.load(f)
 
 # Get the class names
