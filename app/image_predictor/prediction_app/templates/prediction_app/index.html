@@ -42,6 +42,20 @@
             padding: 10px;
             border-radius: 5px;
         }
+        .loader {
+            border: 6px solid #f3f3f3; /* Light grey */
+            border-top: 6px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            display: none; /* Hidden by default */
+            margin: 20px auto; /* Center the loader */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -51,6 +65,8 @@
         <input type="file" name="image" accept="image/*">
         <button type="button" onclick="handleImageUpload()">Upload</button>
     </form>
+    <!-- Loader element -->
+    <div id="loader" class="loader"></div>
     <div class="display-container">
         <div class="predictions-container">
             <h2>Predicted Categories</h2>
@@ -85,17 +101,20 @@
             // Get CSRF token from cookies
             const csrftoken = getCookie('csrftoken');
     
+            // Display the loader
+            document.getElementById('loader').style.display = 'block';
+    
             fetch('/upload/', {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    // Include CSRF token in the request header
-                    "X-CSRFToken": csrftoken
-                },
-                credentials: 'same-origin' // Ensure cookies are sent with the request
+                headers: { "X-CSRFToken": csrftoken },
+                credentials: 'same-origin'
             })
             .then(response => response.json())
             .then(data => {
+                // Hide the loader
+                document.getElementById('loader').style.display = 'none';
+
                 document.getElementById('uploaded-image').style.display = 'block';
                 document.getElementById('uploaded-image').src = data.uploaded_file_url;
     
@@ -107,7 +126,11 @@
                     predictionsList.appendChild(li);
                 });
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                // Hide the loader in case of error too
+                document.getElementById('loader').style.display = 'none';
+            });
         }
     </script>
     
