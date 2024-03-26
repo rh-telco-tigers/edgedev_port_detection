@@ -2,17 +2,59 @@
 <html>
 <head>
     <title>Image Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px; /* Adjusted for wider layout */
+            margin: auto;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between; /* Aligns children with space between */
+            align-items: center; /* Vertically centers children */
+        }
+        .predictions-container, .image-container {
+            flex: 1; /* Allows both containers to grow equally */
+            padding: 20px;
+        }
+        img {
+            max-width: 100%; /* Responsive image */
+            height: auto; /* Maintain aspect ratio */
+            border-radius: 8px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #f2f2f2;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        @media (max-width: 768px) { /* Responsive adjustment for smaller screens */
+            .container {
+                flex-direction: column;
+                align-items: stretch; /* Stretch children to match container width */
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Predicted Categories</h1>
-    <ul>
-        {% for category in predictions %}
-            <li>{{ category }}</li>
-        {% endfor %}
-    </ul>
-    <h2>Uploaded Image</h2>
-    {% if uploaded_file_url %}
-        <img src="{{ uploaded_file_url }}" alt="Uploaded Image"/>
-    {% endif %}
+    <div class="container">
+        <div class="predictions-container">
+            <h1>Predicted Categories</h1>
+            <ul>
+                {% for category in predictions %}
+                    <li>{{ category }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="image-container">
+            {% if uploaded_file_url %}
+                <img src="{{ uploaded_file_url }}" alt="Uploaded Image"/>
+            {% endif %}
+        </div>
+    </div>
 </body>
 </html>
