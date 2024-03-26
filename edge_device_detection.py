@@ -6,11 +6,20 @@ import torchvision.transforms as transforms
 from torchvision.datasets import CocoDetection
 from torch.utils.data import DataLoader
 import numpy as np
+import sys
 import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
+import matplotlib.pyplot as plt
+
+
+
+# Tensor board  default `log_dir` is "runs" - we'll be more specific here
+writer = SummaryWriter('runs/mnist2')
+
 
 # Hyperparameters
 num_epochs = 10
-batch_size = 4
+batch_size = 6
 learning_rate = 0.001
 
 # Define transformations
@@ -21,20 +30,17 @@ transform = transforms.Compose([
 ])
 
 # Load COCO dataset
-train_dataset = CocoDetection(root='./dataset/ZiggoPortStatus-2/train', annFile='./dataset/ZiggoPortStatus-2/train/_annotations.coco.json', transform=transform)
+train_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
 
-test_dataset = CocoDetection(root='./dataset/ZiggoPortStatus-2/test', annFile='./dataset/ZiggoPortStatus-2/test/_annotations.coco.json', transform=transform)
+test_dataset = CocoDetection(root='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8', annFile='/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', transform=transform)
 
-# Print one image
-image, annotations = train_dataset[0]  # Change the index as needed
-print(f"Image shape: {image.shape}, Annotations: {annotations}")
 
 # Get the maximum number of labels for padding
 max_labels = max(len(ann) for _, ann in train_dataset)
 print(f"\nmax_labels is {max_labels}")
 
 # Load category information
-with open('./dataset/ZiggoPortStatus-2/train/_annotations.coco.json', 'r') as f:
+with open('/Users/pmarhath/Downloads/Llama/python/chatgpt/project-12-at-2024-03-19-21-53-73daddc8/result.json', 'r') as f:
     coco_info = json.load(f)
 
 # Get the class names
@@ -45,109 +51,177 @@ print("Class Names:")
 for class_id, class_name in class_names.items():
     print(f"Class ID: {class_id}, Class Name: {class_name}")
 
+# Print one image
+image, annotations = train_dataset[0]  # Change the index as needed
+print(f"Image shape: {image.shape}, Annotations: {annotations}")
+
+# Iterate through the dataset to find images with 6 labels
+for idx, (image, annotations) in enumerate(train_dataset):
+    if len(annotations) == 8:
+        print(f"Image {idx + 1}:")
+        print("Labels:")
+        for annotation in annotations:
+            label_id = annotation['category_id']
+            label_name = class_names.get(label_id, f"Label ID: {label_id} (Unknown)")
+            print(f"- {label_name}")
+        print()
+
 # Define a collate function to handle variable number of labels
 def custom_collate_fn(batch):
     images, targets = zip(*batch)
     
     # Extract category IDs as labels/classes from the target annotations
     labels = [[ann['category_id'] for ann in target] for target in targets]
-#    print(f"\nlabels  is {labels}")
 
-    # Pad labels with -1 so that each batch has the same number of labels
-    padded_labels = [l + [-1]*(max_labels - len(l)) for l in labels]
-#    print(f"\npadded_labels  is {padded_labels}")
+    # Convert labels to one-hot encoded tensors
+    labels_one_hot_list = []  # List to store one-hot encoded labels for each batch
+    images_with_high_labels = []  # List to store images with labels > 21
+    for image, label_batch in zip(images, labels):
+        labels_batch_one_hot = torch.zeros(1, 22)  # Initialize one-hot encoded labels for the current batch with 22 classes
+        for label in label_batch:
+            if 0 <= label < 22:  # Ensure label is within the range [0, 21]
+                labels_batch_one_hot[0, label] = 1
+            else:  # If label is greater than 21, store the corresponding image
+                images_with_high_labels.append(image)
+        labels_one_hot_list.append(labels_batch_one_hot)
 
-    return torch.stack(images), torch.tensor(padded_labels)
+    # Display images with labels > 21
+    for img in images_with_high_labels:
+        plt.imshow(np.transpose(img.numpy(), (1, 2, 0)))  # Display the image
+        plt.axis('off')
+        plt.show()
 
-# Create data loaders with custom collate function
+    return torch.stack(images), torch.cat(labels_one_hot_list, dim=0)
+
+
+# Create data loaders with the filtered datasets
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=custom_collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=custom_collate_fn)
 
+
+
 # Define CNN model
 class CNN(nn.Module):
-    def __init__(self):
+    def __init__(self,num_classes=22):
         super(CNN, self).__init__()
         self.conv1 = nn.Conv2d(3, 16, 3, 1)
         self.conv2 = nn.Conv2d(16, 32, 3, 1)
         self.fc1 = nn.Linear(32*54*54, 128)  # Adjust the input size according to your resized image dimensions
-        self.fc2 = nn.Linear(128, max_labels)  # Output layer with the maximum number of labels
+        self.fc2 = nn.Linear(128, num_classes)  # Output layer with the maximum number of labels
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
+ #       print(f"\nconv1 output shape is {x.shape}")
         x = F.max_pool2d(x, 2, 2)
+#       print(f"\nmax pool output shape is {x.shape}")
         x = F.relu(self.conv2(x))
+#       print(f"\nconv2 output shape is {x.shape}")
         x = F.max_pool2d(x, 2, 2)
+#        print(f"\max pool2 output shape is {x.shape}")
         x = x.view(-1, 32*54*54)  # Adjust the input size according to your resized image dimensions
+#        print(f"\adjustment shape before fc1 is {x.shape}")
         x = F.relu(self.fc1(x))
+#        print(f"\ fc1 output shape is {x.shape}")
         x = self.fc2(x)
+#        print(f"\ fc2 output shape is {x}")
         return x
 
 # Instantiate the model
-model = CNN()
+model = CNN(num_classes=22)
+
+# Tensorboard graph generation 
+
+writer.add_graph(model, torch.rand([1, 3, 224, 224])) 
+#writer.close()
+#sys.exit()
+
+# Log weights and bias
+#for name, param in model.named_parameters():
+#    writer.add_histogram(name, param, bins='auto')
+
+#for name, param in model.named_parameters():
+#    if param.grad is not None:
+#        writer.add_histogram(f'{name}.grad', param.grad, bins='auto')
 
 # Define loss function and optimizer
 criterion = nn.MultiLabelSoftMarginLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+
 # Training loop
 total_steps = len(train_loader)
+
 for epoch in range(num_epochs):
+    running_loss = 0.0
+    running_correct = 0
     for i, (images, labels) in enumerate(train_loader):
 
         # Forward pass
         outputs = model(images)
-        
-        # Convert labels to one-hot encoded tensors
-        labels_one_hot = torch.zeros(outputs.shape[0], max_labels)  # Assuming max_labels is the maximum number of labels
-        for batch_idx, label_batch in enumerate(labels):
-            for idx, label in enumerate(label_batch):
-                if label != -1:
-                    labels_one_hot[batch_idx, label] = 1
- 
-#        print(f"\noutput shape after loop is {outputs}")
-        
-#        print(f"\nlabels_one_hot shape after loop is {labels_one_hot}")
- 
+#        print(f"\n labels is ",labels)
+#        print(f"\n outputs is ",outputs) 
         # Calculate loss
-        loss = criterion(outputs, labels_one_hot) 
+        loss = criterion(outputs, labels)  # labels here are already one-hot encoded
 
         # Backward pass and optimization
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        running_loss += loss.item()
+
+        # Calculate running accuracy
+        _, predicted = torch.max(outputs.data, 1)
+        running_correct += (predicted == labels.argmax(dim=1)).sum().item()  # Compare with one-hot encoded labels
+
 #        if (i+1) % 100 == 0:
         print(f'Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{total_steps}], Loss: {loss.item()}')
+    # Log running loss and accuracy to TensorBoard
+    writer.add_scalar('training loss', running_loss / total_steps, epoch)
+    writer.add_scalar('training accuracy', running_correct / (total_steps * batch_size), epoch)
 
 print('Finished Training')
 
-model.eval()            
+
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# Evaluation
+model.eval()  # Set the model to evaluation mode
+test_loss = 0.0
+all_true_labels = []
+all_predicted_labels = []
+
+# Disable gradients during evaluation
 with torch.no_grad():
-    total = 0
-    correct = 0           
-    
-    for i, (images, labels) in enumerate(test_loader):
+    for images, labels in test_loader:
         # Forward pass
         outputs = model(images)
-        print(f"\nlogits is {outputs}")
 
+        # Calculate loss
+        loss = criterion(outputs, labels)
 
-        # Convert outputs to predicted labels using argmax
-        predicted_labels = torch.argmax(outputs, dim=1)
-        print(f"\npredicted_labels is {predicted_labels}")
+        test_loss += loss.item()
 
-        # Flatten the labels tensor
-        labels_flat = labels.view(-1)
-        print(f"\nlabels_flat is {labels_flat}")
+        # Convert predicted and true labels to class indices and append them to lists
+        for idx in range(len(images)):
+            # Get predicted labels
+            predicted_idx = torch.where(outputs[idx] > 0.5)[0]  # Threshold at 0.5 for binary classification
+            all_predicted_labels.append(predicted_idx.cpu().numpy())
 
-        # Ensure labels_flat and predicted_labels have compatible shapes for comparison
-        predicted_labels = predicted_labels.unsqueeze(1).expand(-1, labels_flat.size(0))
-        print(f"\npredicted_labels is {predicted_labels}")
+            # Get true labels
+            true_idx = torch.where(labels[idx] == 1)[0]
+            all_true_labels.append(true_idx.cpu().numpy())
 
-        # Calculate accuracy
-        total += labels_flat.size(0)
-        correct += torch.sum(labels_flat == predicted_labels.squeeze()).item()
+# Flatten the lists of true labels and predicted labels
+true_labels_list = [class_names[i] for sublist in all_true_labels for i in sublist]
+predicted_labels_list = [class_names[i] for sublist in all_predicted_labels for i in sublist]
 
-    accuracy = correct / total
-    
-    print(f'Test Accuracy: {accuracy * 100:.2f}%')
+# Calculate test accuracy
+test_accuracy = accuracy_score(true_labels_list, predicted_labels_list)
+
+# Calculate precision, recall, and F1 score
+precision = precision_score(true_labels_list, predicted_labels_list, average='micro')
+recall = recall_score(true_labels_list, predicted_labels_list, average='micro')
+f1 = f1_score(true_labels_list, predicted_labels_list, average='micro')
+
+print(f'Test Loss: {test_loss}, Test Accuracy: {test_accuracy}, Precision: {precision}, Recall: {recall}, F1 Score: {f1}')
