@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Display</title>
+</head>
+<body>
+    <h2>Uploaded Image</h2>
+    {% if uploaded_file_url %}
+        <img src="{{ uploaded_file_url }}" alt="Uploaded Image"/>
+    {% endif %}
+</body>
+</html>

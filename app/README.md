@@ -11,7 +11,12 @@ pip install django
 
 ##  Create and Configure Your Django Project
 ```
-django-admin startproject ImagePredictor
-cd ImagePredictor
-python manage.py startapp PredictionApp
+django-admin startproject image_predictor
+cd image_predictor
+python manage.py startapp prediction_app
+```
+
+## Run App
+```
+python manage.py runserver
 ```
