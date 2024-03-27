@@ -12,9 +12,13 @@ spec:
       labels:
         app: image-predictor
     spec:
+      serviceAccountName: image-predictor
       containers:
       - name: image-predictor
         image: quay.io/bpandey/edgedev_port_detection:v1.0.0
+        securityContext:
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
         ports:
         - containerPort: 8000
         envFrom:

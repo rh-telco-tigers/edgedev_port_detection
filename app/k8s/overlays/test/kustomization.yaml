@@ -1,6 +1,8 @@
 resources:
   - ../../base
 
+namespace: bal-project
+
 patches:
   - path: deployment-patch.yaml
     target:
@@ -8,6 +10,12 @@ patches:
       version: v1
       kind: Deployment
       name: image-predictor
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRoleBinding
+      name: system:openshift:scc:anyuid
+    path: clusterrolebinding-namespace-patch.yaml
 
 secretGenerator:
   - name: image-predictor-env

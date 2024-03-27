@@ -30,3 +30,4 @@ media/
 .DS_Store
 
 secrets.env
+.env
