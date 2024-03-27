@@ -20,3 +20,16 @@ python manage.py startapp prediction_app
 ```
 python manage.py runserver
 ```
+
+## Podman Build and run
+Make sure to create .env file with following content
+```
+MODEL_SERVER_URL=<model-server-url>
+TOKEN=<your-token>
+```
+
+Now build and run the code.
+```
+podman build -t localhost/image_predictor:latest .
+podman run --env-file=./.env -p 8090:8000 localhost/image_predictor:latest
+```
