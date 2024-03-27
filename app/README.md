@@ -26,6 +26,7 @@ Make sure to create .env file with following content
 ```
 MODEL_SERVER_URL=<model-server-url>
 TOKEN=<your-token>
+DJANGO_ALLOWED_HOSTS=".apps.demo.ai.ocp.run,localhost,127.0.0.1"
 ```
 
 Now build and run the code.
