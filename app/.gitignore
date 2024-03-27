@@ -28,3 +28,5 @@ share/python-wheels/
 MANIFEST
 media/
 .DS_Store
+
+secrets.env
